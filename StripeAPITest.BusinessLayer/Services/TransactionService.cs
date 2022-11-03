@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using StripeAPITest.BusinessLayer.Extensions;
 
 namespace StripeAPITest.BusinessLayer.Services
 {
@@ -30,6 +31,7 @@ namespace StripeAPITest.BusinessLayer.Services
 
         public async Task<Charge> AuthoriseAsync(Transaction tran)
         {
+           
             var options = new ChargeCreateOptions
             {
                 Amount = tran.Amount,
@@ -46,6 +48,10 @@ namespace StripeAPITest.BusinessLayer.Services
 
         public async Task<Charge> CaptureAsync(Transaction tran)
         {
+            if (!tran.ParentTransactionId.HasValue)
+            {
+                throw new NoParentTransactionException();
+            }
             var ret = chargeService.Capture(tran.ChargeCoordinates);
             var entity = await InsertTransaction(tran);
             tran.Id = entity.Id;
@@ -54,6 +60,10 @@ namespace StripeAPITest.BusinessLayer.Services
 
         public async Task<Refund> VoidAsync(Transaction tran)
         {
+            if (!tran.ParentTransactionId.HasValue)
+            {
+                throw new NoParentTransactionException();
+            }
             var options = new RefundCreateOptions
             {
                 Charge =  tran.ChargeCoordinates,
